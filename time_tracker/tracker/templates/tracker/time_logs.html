@@ -1,0 +1,75 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold">Time Logs</h1>
+            <form method="get" class="flex space-x-2">
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ query }}"
+                    placeholder="Search descriptions..."
+                    class="border rounded px-4 py-2 focus:outline-none focus:border-blue-500"
+                >
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    Search
+                </button>
+            </form>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="px-4 py-2 text-left">Date</th>
+                        <th class="px-4 py-2 text-left">Description</th>
+                        <th class="px-4 py-2 text-left">Start Time</th>
+                        <th class="px-4 py-2 text-left">End Time</th>
+                        <th class="px-4 py-2 text-left">Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in page_obj %}
+                    <tr class="border-t">
+                        <td class="px-4 py-2">{{ log.start_time|date:"Y-m-d" }}</td>
+                        <td class="px-4 py-2">{{ log.description }}</td>
+                        <td class="px-4 py-2">{{ log.start_time|time:"H:i:s" }}</td>
+                        <td class="px-4 py-2">{{ log.end_time|time:"H:i:s" }}</td>
+                        <td class="px-4 py-2">{{ log.duration }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-2 text-center">No time logs found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% if page_obj.has_other_pages %}
+        <div class="flex justify-center space-x-2 mt-4">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}{% if query %}&q={{ query }}{% endif %}"
+               class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">&laquo; Previous</a>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="px-3 py-1 bg-blue-500 text-white rounded">{{ num }}</span>
+                {% else %}
+                <a href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}"
+                   class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}"
+               class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">Next &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

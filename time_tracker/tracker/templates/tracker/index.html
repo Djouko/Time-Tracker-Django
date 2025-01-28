@@ -1,0 +1,138 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-4">Time Tracker</h1>
+        
+        <div class="text-6xl font-mono text-center my-8" id="timer">00:00:00</div>
+        
+        <div class="flex justify-center space-x-4">
+            <button id="startBtn" class="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600">
+                Start
+            </button>
+            <button id="pauseBtn" class="bg-yellow-500 text-white px-6 py-2 rounded hover:bg-yellow-600" disabled>
+                Pause
+            </button>
+            <button id="stopBtn" class="bg-red-500 text-white px-6 py-2 rounded hover:bg-red-600" disabled>
+                Stop
+            </button>
+        </div>
+
+        <div id="bookingForm" class="mt-8 hidden">
+            <h2 class="text-xl font-bold mb-4">Book Time</h2>
+            <form id="timeLogForm">
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="description">
+                        Description
+                    </label>
+                    <textarea
+                        id="description"
+                        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        required
+                    ></textarea>
+                </div>
+                <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600">
+                    Save Time Log
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let startTime = null; // Déclarez startTime ici
+let timerInterval = null;
+let totalSeconds = 0;
+let isPaused = false;
+let pauseStartTime = null;
+let totalPausedTime = 0;
+
+function updateTimer() {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    document.getElementById('timer').textContent =
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+document.getElementById('startBtn').addEventListener('click', function() {
+    if (!startTime) {
+        startTime = new Date(); // Initialisez startTime ici
+        timerInterval = setInterval(() => {
+            if (!isPaused) {
+                const now = new Date();
+                const elapsedMs = now - startTime - totalPausedTime;
+                totalSeconds = Math.floor(elapsedMs / 1000);
+                updateTimer();
+            }
+        }, 1000);
+
+        this.disabled = true;
+        document.getElementById('pauseBtn').disabled = false;
+        document.getElementById('stopBtn').disabled = false;
+    }
+});
+
+document.getElementById('pauseBtn').addEventListener('click', function() {
+    if (!isPaused) {
+        isPaused = true;
+        pauseStartTime = new Date();
+        this.textContent = 'Resume';
+        this.classList.remove('bg-yellow-500', 'hover:bg-yellow-600');
+        this.classList.add('bg-green-500', 'hover:bg-green-600');
+    } else {
+        isPaused = false;
+        totalPausedTime += new Date() - pauseStartTime;
+        pauseStartTime = null;
+        this.textContent = 'Pause';
+        this.classList.remove('bg-green-500', 'hover:bg-green-600');
+        this.classList.add('bg-yellow-500', 'hover:bg-yellow-600');
+    }
+});
+
+document.getElementById('stopBtn').addEventListener('click', function() {
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        document.getElementById('bookingForm').classList.remove('hidden');
+        document.getElementById('startBtn').disabled = true;
+        document.getElementById('pauseBtn').disabled = true;
+        this.disabled = true;
+    }
+});
+
+document.getElementById('timeLogForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const description = document.getElementById('description').value;
+    const endTime = new Date().toISOString(); // Obtenez l'heure de fin au format ISO
+    const startTimeISO = startTime.toISOString(); // Utilisez startTime ici
+
+    fetch('{% url "save_time_log" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: JSON.stringify({
+            start_time: startTimeISO,
+            end_time: endTime,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            window.location.href = '{% url "time_logs" %}';
+        } else {
+            console.error('Error:', data.message); // Affichez le message d'erreur
+        }
+    })
+    .catch(error => console.error('Error:', error));
+});
+</script>
+{% endblock %}
