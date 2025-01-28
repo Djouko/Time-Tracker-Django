@@ -15,7 +15,7 @@ A Django-based time tracking application that allows users to track time spent o
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/Djouko/Time-Tracker-Django
 cd time_tracker
 ```
 
@@ -38,8 +38,8 @@ docker-compose exec web python manage.py createsuperuser
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd timetracker
+git clone https://github.com/Djouko/Time-Tracker-Django
+cd time_tracker
 ```
 
 2. Create a virtual environment and activate it:
